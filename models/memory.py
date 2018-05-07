@@ -34,20 +34,6 @@ class BaseMemory(object):
             name="memory_hist", shape=[self.memory_size], trainable=False,
             initializer=tf.constant_initializer(1e-5, dtype=np.float32))
 
-    def get(self):
-        return self.mem_keys, self.mem_vals, self.mem_age, self.mem_hist
-
-    def set(self, k, v, a, h, r=None):
-        return tf.group(
-            self.mem_keys.assign(k),
-            self.mem_vals.assign(v),
-            self.mem_age.assign(a),
-            self.mem_hist.assign(h))
-
-    def clear(self):
-        return tf.variables_initializer(
-            [self.mem_keys, self.mem_vals, self.mem_age, self.mem_hist])
-
     def get_hint_pool_idxs(self, normalized_query, label=None):
         assert normalized_query.get_shape().as_list()[1] == self.key_dim
         with tf.device(self.nn_device):
@@ -83,9 +69,6 @@ class BaseMemory(object):
 
         return tf.group(mem_age_upd, mem_key_upd, mem_val_upd, mem_hist_upd)
 
-    def get_histogram(self):
-        return self.mem_hist/tf.reduce_sum(self.mem_hist)
-
     def sample_histogram(self, n, is_key=True):
         real_hist = self.mem_hist * self.mem_vals
         probs = real_hist/tf.reduce_sum(real_hist)
@@ -96,15 +79,6 @@ class BaseMemory(object):
             sample_keys = tf.reshape(tf.gather(self.mem_keys, idxs), [n, -1])
             return sample_keys
         return tf.one_hot(idxs, self.memory_size)
-
-    def sample_onehot(self, n):
-        real_hist = self.mem_hist * self.mem_vals
-        probs = real_hist/tf.reduce_sum(real_hist)
-        self.probs = probs
-        distr = tf.contrib.distributions.Categorical(probs=probs)
-        idxs = distr.sample(n)
-        sample_keys = tf.reshape(tf.gather(self.mem_keys, idxs), [n, -1])
-        return sample_keys
 
     def query(self, query_vec, label, update_memory=tf.constant(True),
             alpha=0.5, n_iter=1):
