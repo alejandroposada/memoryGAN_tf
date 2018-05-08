@@ -56,14 +56,15 @@ def generalization_examples(model, sess):
     print(res)
 
     # build key matrix of examples from cifar10
-    keys, images = get_keys_for_dataset(model, sess, d_optim)
+    keys, images = get_keys_for_dataset(model, n_batches=100)
     gen_img, z = generate_memgan(model, sess, n_iter=1, batch_size=bs)
     gen_key = model.q_f.eval(feed_dict={model.image: gen_img, model.z: z})
     gen_img = inverse_transform(gen_img)
 
     final_images = []
     for i in range(num_comparisons):
-        similarity = np.dot(keys, gen_key[i])
+        similarity = np.dot(keys/np.linalg.norm(keys, axis=1)[:, np.newaxis],
+                            gen_key[i]/np.linalg.norm(gen_key[i]))
         top_k = similarity.argsort()[-k_nn:][::-1]
 
         final_images.append(np.expand_dims(gen_img[i], axis=0))
@@ -88,11 +89,11 @@ def generate_memgan(model, sess, n_iter=100, batch_size=64):
     return np.concatenate(samples, axis=0), z
 
 
-def get_keys_for_dataset(model, sess, d_optim):
+def get_keys_for_dataset(model, n_batches=100):
     keys = []
     images = []
     dataset = load_dataset(model)
-    for idx in xrange(0, 100):
+    for idx in xrange(0, n_batches):
         z = get_z(model, model.batch_size)
         image, label = dataset.next_batch(model.batch_size)
 
@@ -130,7 +131,7 @@ def save_image_sample(images):
     for i in range(int(np.sqrt(len(images)))):
         for j in range(int(np.sqrt(len(images)))):
             if j != 0:
-                image = cv2.cvtColor(images[indx], cv2.COLOR_RGB2BGR)
+                image = images[indx].astype("uint8")
             else:
                 image = images[indx]
             axarr[i, j].imshow(image)
