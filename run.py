@@ -4,7 +4,7 @@ import tensorflow as tf
 
 from models.config import Config
 from models.memory_gan import MemoryGAN
-from models.test_generation import test_generation
+from models.test_generation import test_generation, generalization_examples
 from models.train import train
 from utils import pp, visualize, to_json
 
@@ -14,7 +14,7 @@ flags = tf.app.flags
 flags.DEFINE_integer("epoch", 1500, "Max epoch to train")
 flags.DEFINE_string("exp", 0, "Experiment number")
 flags.DEFINE_string("load_cp_dir", '', "cp path")
-flags.DEFINE_string("dataset", "fashion", "[fashion, affmnist, cifar10]")
+flags.DEFINE_string("dataset", "cifar10", "[fashion, affmnist, cifar10]")
 flags.DEFINE_string("loss", "jsd", "[jsd, alternative, reverse_kl, updown]")
 flags.DEFINE_boolean("lr_decay", False, "")
 flags.DEFINE_boolean("use_augmentation", False, "")
@@ -22,6 +22,7 @@ flags.DEFINE_boolean("is_train", True, "True for training, False for testing [Fa
 flags.DEFINE_string("model", 'MemoryGAN', '')
 flags.DEFINE_string("generator", 'base_g', '')
 flags.DEFINE_string("discriminator", 'memory_d', '')
+flags.DEFINE_string("gen_exp", False, 'True to test generalization with other images (sec4.4)')
 
 FLAGS = flags.FLAGS
 
@@ -39,7 +40,10 @@ def main(_):
         model = globals()[FLAGS.model](config)
 
         if not FLAGS.is_train:
-            test_generation(model, sess)
+            if not FLAGS.gen_exp:
+                test_generation(model, sess)
+            else:
+                generalization_examples(model, sess)
         else:
             train(model, sess)
 

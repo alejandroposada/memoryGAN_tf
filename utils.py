@@ -34,7 +34,7 @@ def save_images(images, size, image_path):
     dir_path = '/'.join(image_path.split('/')[:-1])
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
-    return imsave(inverse_transform(images), size, image_path)
+    return imsave(images, size, image_path)
 
 def imread(path):
     img = scipy.misc.imread(path)

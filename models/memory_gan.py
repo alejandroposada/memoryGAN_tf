@@ -32,6 +32,7 @@ class MemoryGAN(GAN):
         image = preprocess_image(self.image, self.dataset_name, self.use_augmentation)
 
         q_r = self.discriminator(image, is_training)
+        self.q_r = q_r
         d_out_r = self.mem.query(q_r, tf.ones(self.batch_size))
 
         self.q_sample = self.mem.sample_histogram(self.batch_size)
@@ -39,6 +40,7 @@ class MemoryGAN(GAN):
             tf.concat([self.z, self.q_sample], axis=1), is_training)
 
         q_f = self.discriminator(self.gen_image, is_training, reuse=True)
+        self.q_f = q_f
         d_out_f = self.mem.query(q_f, tf.zeros(self.batch_size))
 
         d_loss, g_loss, self.d_real, self.d_fake = self.get_loss(d_out_r, d_out_f, config.loss)
